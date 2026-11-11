@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRONOS 3D — Organizador Específico de Rotinas</title>
+    <!-- CSS Externo -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Fontes e Ícones -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js CDN para Objetos 3D Tridimensionais -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <!-- Canvas para Objetos 3D Flutuantes em Degradê -->
+    <canvas id="bg-3d"></canvas>
+
+    <!-- App Container -->
+    <div class="app-container">
+        
+        <!-- Cabeçalho -->
+        <header class="main-header">
+            <div class="brand">
+                <div class="logo-3d-box">
+                    <i class="fa-solid fa-cubes-stacked"></i>
+                </div>
+                <div>
+                    <h1>KRONOS <span class="gradient-text">3D</span></h1>
+                    <p class="subtitle">Organizador Específico de Rotinas & Hábitos</p>
+                </div>
+            </div>
+
+            <!-- Painel de Métricas Gerais -->
+            <div class="quick-stats">
+                <div class="stat-pill">
+                    <span class="stat-label">Progresso Geral</span>
+                    <span class="stat-value" id="overall-progress-text">0%</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-label">Categorias</span>
+                    <span class="stat-value">6 Especificadas</span>
+                </div>
+                <button class="btn-primary" onclick="alert('Recurso para adicionar nova rotina personalizada!')">
+                    <i class="fa-solid fa-plus"></i> Nova Rotina
+                </button>
+            </div>
+        </header>
+
+        <!-- Filtros Rápidos -->
+        <div class="filter-bar">
+            <button class="filter-chip active" onclick="filterCards('all', event)">Todas as Rotinas</button>
+            <button class="filter-chip" onclick="filterCards('estudo', event)">📚 Estudo</button>
+            <button class="filter-chip" onclick="filterCards('trabalho', event)">💼 Trabalho</button>
+            <button class="filter-chip" onclick="filterCards('saude', event)">🧘 Saúde</button>
+            <button class="filter-chip" onclick="filterCards('esportes', event)">⚽ Esportes</button>
+            <button class="filter-chip" onclick="filterCards('hobby', event)">🎨 Hobby</button>
+            <button class="filter-chip" onclick="filterCards('lazer', event)">🎮 Lazer</button>
+        </div>
+
+        <!-- Grelha de Cards Específicos de Rotina -->
+        <main class="cards-grid" id="cards-container">
+            <!-- Os cards detalhados serão injetados via JavaScript -->
+        </main>
+    </div>
+
+    <!-- MODAL DE DETALHAMENTO DA ROTINA -->
+    <div class="modal-overlay" id="routine-modal">
+        <div class="modal-card">
+            <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+            
+            <div class="modal-header">
+                <div class="modal-icon-badge" id="modal-icon">📚</div>
+                <div>
+                    <span class="category-tag" id="modal-category">Categoria</span>
+                    <h2 id="modal-title">Título da Rotina</h2>
+                </div>
+            </div>
+
+            <p class="modal-description" id="modal-description">Descrição técnica e fluxo da rotina...</p>
+
+            <!-- ESPECIFICAÇÕES DETALHADAS DA ROTINA -->
+            <div class="modal-spec-grid">
+                <div class="spec-card">
+                    <i class="fa-regular fa-clock icon-cyan"></i>
+                    <div>
+                        <small>Horário Recomendado</small>
+                        <strong id="modal-schedule">08:00 - 11:30</strong>
+                    </div>
+                </div>
+                <div class="spec-card">
+                    <i class="fa-regular fa-calendar-check icon-violet"></i>
+                    <div>
+                        <small>Frequência Semanal</small>
+                        <strong id="modal-frequency">Segunda a Sexta</strong>
+                    </div>
+                </div>
+                <div class="spec-card">
+                    <i class="fa-solid fa-bullseye icon-magenta"></i>
+                    <div>
+                        <small>Meta Diária</small>
+                        <strong id="modal-goal">3h 30m / dia</strong>
+                    </div>
+                </div>
+                <div class="spec-card">
+                    <i class="fa-solid fa-layer-group icon-cyan"></i>
+                    <div>
+                        <small>Nível de Prioridade</small>
+                        <strong id="modal-priority">Foco Profundo</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progresso Geral do Modal -->
+            <div class="modal-progress-section">
+                <div class="progress-info">
+                    <span>Taxa de Conclusão</span>
+                    <strong id="modal-percent">0%</strong>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="modal-progress-fill"></div>
+                </div>
+            </div>
+
+            <!-- Checklist de Tarefas -->
+            <div class="tasks-section">
+                <h3><i class="fa-solid fa-list-check"></i> Checklist & Atividades Específicas</h3>
+                <ul class="task-list" id="modal-task-list">
+                    <!-- Tarefas dinâmicas -->
+                </ul>
+            </div>
+
+            <!-- Formulário Adicionar Tarefa -->
+            <form class="add-task-form" onsubmit="handleAddTask(event)">
+                <input type="text" id="new-task-input" placeholder="Adicionar nova atividade a esta rotina..." required>
+                <button type="submit" class="btn-add"><i class="fa-solid fa-plus"></i></button>
+            </form>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal()">Concluído / Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT INTEGRADO -->
+    <script>
+        /* ==========================================================
+           1. ESPECIFICAÇÃO COMPLETA E DETALHADA DE CADA ROTINA
+           ========================================================== */
+        const routinesData = [
+            {
+                id: 'estudo',
+                categoryName: 'Estudo',
+                title: 'Foco Profundo & Aprendizado',
+                subtitle: 'Engenharia de Software & Idiomas',
+                icon: '📚',
+                themeColor: 'gradient-violet',
+                schedule: '08:00 - 11:30',
+                frequency: 'Segunda a Sexta',
+                dailyGoal: '3h 30m',
+                priority: 'Alta (Deep Work)',
+                description: 'Rotina focada em aprendizado contínuo, utilizando ciclos Pomodoro de 50min com 10min de descanso ativo para retenção de conceitos complexos.',
+                tasks: [
+                    { id: 101, text: 'Ler 2 capítulos de Arquitetura de Microsserviços', done: true },
+                    { id: 102, text: 'Resolver 3 desafios de código no LeetCode (Nível Médio)', done: false },
+                    { id: 103, text: 'Revisão de 40 Flashcards no Anki (Inglês Técnico)', done: true },
+                    { id: 104, text: 'Prática de conversação em Inglês (20 minutos)', done: false }
+                ]
+            },
+            {
+                id: 'trabalho',
+                categoryName: 'Trabalho',
+                title: 'Gestão de Projetos & Entregas',
+                subtitle: 'Sprints, Code Review e Arquitetura',
+                icon: '💼',
+                themeColor: 'gradient-cyan',
+                schedule: '13:00 - 18:00',
+                frequency: 'Segunda a Sexta',
+                dailyGoal: '5h 00m',
+                priority: 'Crítica (Alta Entrega)',
+                description: 'Execução das demandas profissionais diárias, reuniões de alinhamento estratégico e desenvolvimento de novas funcionalidades.',
+                tasks: [
+                    { id: 201, text: 'Sincronização diária (Daily Standup) com a equipe', done: true },
+                    { id: 202, text: 'Revisar e aprovar 4 Pull Requests pendentes', done: true },
+                    { id: 203, text: 'Desenvolver módulo de autenticação da API', done: false },
+                    { id: 204, text: 'Atualizar prazos e tickets prioritários no Jira', done: true }
+                ]
+            },
+            {
+                id: 'saude',
+                categoryName: 'Saúde',
+                title: 'Vitalidade, Sono & Mente',
+                subtitle: 'Hidratação, Meditação e Sono',
+                icon: '🧘',
+                themeColor: 'gradient-magenta',
+                schedule: 'Ao longo do dia',
+                frequency: 'Todos os dias (Diário)',
+                dailyGoal: '2h 00m',
+                priority: 'Fundamental (Essencial)',
+                description: 'Protocolo de cuidados fundamentais com a saúde física e mental para manutenção do foco, disposição e redução de estresse.',
+                tasks: [
+                    { id: 301, text: 'Consumir 3,5 Litros de água fracionados no dia', done: true },
+                    { id: 302, text: 'Meditação Mindfulness guiada (15 minutos)', done: true },
+                    { id: 303, text: 'Preparo de refeições balanceadas (Proteínas e Vegetais)', done: false },
+                    { id: 304, text: 'Desconexão total de telas e luz azul às 22:00', done: false }
+                ]
+            },
+            {
+                id: 'esportes',
+                categoryName: 'Esportes',
+                title: 'Treino de Força & Cardio',
+                subtitle: 'Musculação e Corrida de Alta Int.',
+                icon: '⚽',
+                themeColor: 'gradient-cyan',
+                schedule: '18:30 - 20:00',
+                frequency: '5x por Semana',
+                dailyGoal: '1h 30m',
+                priority: 'Intensa (Performance)',
+                description: 'Treinamento físico focado em ganho de massa muscular, condicionamento cardiorrespiratório e liberação de endorfina.',
+                tasks: [
+                    { id: 401, text: 'Treino de Musculação: Peito, Ombros e Tríceps', done: true },
+                    { id: 402, text: 'Corrida contínua de 5 km em ritmo moderado', done: false },
+                    { id: 403, text: 'Sessão de alongamento e mobilidade articular', done: true }
+                ]
+            },
+            {
+                id: 'hobby',
+                categoryName: 'Hobby',
+                title: 'Criação & Expressão Artística',
+                subtitle: 'Música, Desenho e Projetos Pessoais',
+                icon: '🎨',
+                themeColor: 'gradient-magenta',
+                schedule: '20:30 - 21:30',
+                frequency: '3x por Semana',
+                dailyGoal: '1h 00m',
+                priority: 'Moderada (Criatividade)',
+                description: 'Espaço semanal dedicado ao desenvolvimento de habilidades artísticas, expressão pessoal e exploração de novas ideias.',
+                tasks: [
+                    { id: 501, text: 'Prática de escalas e acordes no Violão / Teclado', done: false },
+                    { id: 502, text: 'Escrita reflexiva no diário (Journaling de 15 min)', done: true },
+                    { id: 503, text: 'Modelagem 3D e texturização gráfica no Blender', done: false }
+                ]
+            },
+            {
+                id: 'lazer',
+                categoryName: 'Lazer',
+                title: 'Desconexão & Lazer Social',
+                subtitle: 'Jogos, Filmes e Convivência',
+                icon: '🎮',
+                themeColor: 'gradient-violet',
+                schedule: '21:30 - 23:00',
+                frequency: 'Fins de Semana & Noites',
+                dailyGoal: '2h 00m',
+                priority: 'Leve (Recarga de Energia)',
+                description: 'Tempo livre destinado ao relaxamento puro, entretenimento de qualidade e momentos de lazer com amigos e família.',
+                tasks: [
+                    { id: 601, text: 'Assistir 1 episódio da série de ficção favorita', done: true },
+                    { id: 602, text: 'Sessão de jogos online com amigos no Discord', done: false },
+                    { id: 603, text: 'Caminhada relaxante no parque no final de semana', done: true }
+                ]
+            }
+        ];
+
+        let activeRoutineId = null;
+
+        /* ==========================================================
+           2. RENDERIZAÇÃO DOS CARDS COM TODAS AS ESPECIFICAÇÕES
+           ========================================================== */
+        function renderCards(filter = 'all') {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+
+            const filtered = filter === 'all' 
+                ? routinesData 
+                : routinesData.filter(r => r.id === filter);
+
+            filtered.forEach(routine => {
+                const totalTasks = routine.tasks.length;
+                const completedTasks = routine.tasks.filter(t => t.done).length;
+                const percent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+                const cardHTML = `
+                    <div class="routine-card" onclick="openModal('${routine.id}')">
+                        <div class="card-glass-glow"></div>
+                        
+                        <!-- Topo do Card -->
+                        <div class="card-header">
+                            <span class="card-icon">${routine.icon}</span>
+                            <span class="category-badge ${routine.themeColor}">${routine.categoryName}</span>
+                        </div>
+                        
+                        <!-- Título e Subtítulo -->
+                        <h3 class="card-title">${routine.title}</h3>
+                        <p class="card-subtitle">${routine.subtitle}</p>
+
+                        <!-- ESPECIFICAÇÕES RÁPIDAS NO CARD -->
+                        <div class="card-spec-tags">
+                            <span class="spec-tag"><i class="fa-regular fa-clock"></i> ${routine.schedule}</span>
+                            <span class="spec-tag"><i class="fa-regular fa-calendar"></i> ${routine.frequency}</span>
+                        </div>
+
+                        <div class="card-stats">
+                            <span><i class="fa-regular fa-circle-check"></i> ${completedTasks} de ${totalTasks} concluídas</span>
+                            <span><i class="fa-solid fa-bullseye"></i> Meta: ${routine.dailyGoal}</span>
+                        </div>
+
+                        <!-- Barra de Progresso Tridimensional -->
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill ${routine.themeColor}" style="width: ${percent}%;"></div>
+                        </div>
+
+                        <!-- Rodapé do Card -->
+                        <div class="card-footer">
+                            <span class="progress-text">${percent}% Concluído</span>
+                            <button class="btn-card-action">Especificações <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHTML;
+            });
+
+            updateOverallProgress();
+        }
+
+        function updateOverallProgress() {
+            let total = 0;
+            let done = 0;
+            routinesData.forEach(r => {
+                r.tasks.forEach(t => {
+                    total++;
+                    if (t.done) done++;
+                });
+            });
+            const overall = total > 0 ? Math.round((done / total) * 100) : 0;
+            document.getElementById('overall-progress-text').innerText = `${overall}%`;
+        }
+
+        /* ==========================================================
+           3. ABRIR MODAL COM ESPECIFICAÇÕES E ATIVIDADES
+           ========================================================== */
+        function openModal(id) {
+            activeRoutineId = id;
+            const routine = routinesData.find(r => r.id === id);
+            if (!routine) return;
+
+            document.getElementById('modal-icon').innerText = routine.icon;
+            document.getElementById('modal-category').innerText = routine.categoryName;
+            document.getElementById('modal-title').innerText = routine.title;
+            document.getElementById('modal-description').innerText = routine.description;
+            
+            // Especificações
+            document.getElementById('modal-schedule').innerText = routine.schedule;
+            document.getElementById('modal-frequency').innerText = routine.frequency;
+            document.getElementById('modal-goal').innerText = routine.dailyGoal;
+            document.getElementById('modal-priority').innerText = routine.priority;
+
+            renderModalTasks(routine);
+
+            const modal = document.getElementById('routine-modal');
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('routine-modal');
+            modal.classList.remove('active');
+            activeRoutineId = null;
+            renderCards(); // Atualiza a tela principal ao fechar
+        }
+
+        function renderModalTasks(routine) {
+            const listContainer = document.getElementById('modal-task-list');
+            listContainer.innerHTML = '';
+
+            const total = routine.tasks.length;
+            const completed = routine.tasks.filter(t => t.done).length;
+            const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            document.getElementById('modal-percent').innerText = `${percent}%`;
+            
+            const fill = document.getElementById('modal-progress-fill');
+            fill.style.width = `${percent}%`;
+            fill.className = `progress-bar-fill ${routine.themeColor}`;
+
+            routine.tasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = `task-item ${task.done ? 'completed' : ''}`;
+                li.innerHTML = `
+                    <label class="custom-checkbox">
+                        <input type="checkbox" ${task.done ? 'checked' : ''} onchange="toggleTask(${task.id})">
+                        <span class="checkmark"></span>
+                        <span class="task-text">${task.text}</span>
+                    </label>
+                    <button class="btn-delete-task" onclick="deleteTask(${task.id})"><i class="fa-solid fa-trash-can"></i></button>
+                `;
+                listContainer.appendChild(li);
+            });
+        }
+
+        function toggleTask(taskId) {
+            const routine = routinesData.find(r => r.id === activeRoutineId);
+            if (!routine) return;
+
+            const task = routine.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.done = !task.done;
+                renderModalTasks(routine);
+            }
+        }
+
+        function deleteTask(taskId) {
+            const routine = routinesData.find(r => r.id === activeRoutineId);
+            if (!routine) return;
+
+            routine.tasks = routine.tasks.filter(t => t.id !== taskId);
+            renderModalTasks(routine);
+        }
+
+        function handleAddTask(e) {
+            e.preventDefault();
+            const input = document.getElementById('new-task-input');
+            const text = input.value.trim();
+            if (!text || !activeRoutineId) return;
+
+            const routine = routinesData.find(r => r.id === activeRoutineId);
+            routine.tasks.push({
+                id: Date.now(),
+                text: text,
+                done: false
+            });
+
+            input.value = '';
+            renderModalTasks(routine);
+        }
+
+        function filterCards(category, evt) {
+            document.querySelectorAll('.filter-chip').forEach(btn => btn.classList.remove('active'));
+            evt.target.classList.add('active');
+            renderCards(category);
+        }
+
+        /* ==========================================================
+           4. AMBIENTE 3D FLUTUANTE EM 3 CORES (THREE.JS)
+           Cores: Ciano (#00DFD8), Violeta (#7928CA), Magenta (#FF007F)
+           ========================================================== */
+        function init3DBackground() {
+            const canvas = document.getElementById('bg-3d');
+            const scene = new THREE.Scene();
+            
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 10;
+
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Geometrias Tridimensionais Variadas
+            const geometries = [
+                new THREE.IcosahedronGeometry(1.2, 0),
+                new THREE.TorusGeometry(1, 0.35, 16, 100),
+                new THREE.OctahedronGeometry(1.1, 0),
+                new THREE.TorusKnotGeometry(0.8, 0.25, 100, 16),
+                new THREE.DodecahedronGeometry(1, 0)
+            ];
+
+            // Três Cores em Degradê Vibrantes
+            const colors = [0x00DFD8, 0x7928CA, 0xFF007F];
+            const meshes = [];
+
+            // Criar 25 Objetos 3D Tridimensionais
+            for (let i = 0; i < 25; i++) {
+                const geom = geometries[Math.floor(Math.random() * geometries.length)];
+                const color = colors[i % colors.length];
+
+                const material = new THREE.MeshPhysicalMaterial({
+                    color: color,
+                    emissive: color,
+                    emissiveIntensity: 0.35,
+                    roughness: 0.2,
+                    metalness: 0.7,
+                    wireframe: i % 2 === 0,
+                    transparent: true,
+                    opacity: 0.75
+                });
+
+                const mesh = new THREE.Mesh(geom, material);
+
+                mesh.position.x = (Math.random() - 0.5) * 22;
+                mesh.position.y = (Math.random() - 0.5) * 22;
+                mesh.position.z = (Math.random() - 0.5) * 12 - 2;
+
+                mesh.rotation.x = Math.random() * Math.PI;
+                mesh.rotation.y = Math.random() * Math.PI;
+
+                const scale = Math.random() * 0.7 + 0.5;
+                mesh.scale.set(scale, scale, scale);
+
+                mesh.userData = {
+                    rotSpeedX: (Math.random() - 0.5) * 0.012,
+                    rotSpeedY: (Math.random() - 0.5) * 0.012,
+                    floatSpeed: Math.random() * 0.008 + 0.003,
+                    floatOffset: Math.random() * Math.PI * 2,
+                    initialY: mesh.position.y
+                };
+
+                scene.add(mesh);
+                meshes.push(mesh);
+            }
+
+            // Luzes Ponto em Degradê
+            const lightCyan = new THREE.PointLight(0x00DFD8, 2.5, 30);
+            lightCyan.position.set(-6, 6, 6);
+            scene.add(lightCyan);
+
+            const lightViolet = new THREE.PointLight(0x7928CA, 2.5, 30);
+            lightViolet.position.set(6, -6, 6);
+            scene.add(lightViolet);
+
+            const lightMagenta = new THREE.PointLight(0xFF007F, 2.5, 30);
+            lightMagenta.position.set(0, 8, -4);
+            scene.add(lightMagenta);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+
+            // Parallax Interativo com o Ponteiro do Mouse
+            let mouseX = 0;
+            let mouseY = 0;
+            window.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX / window.innerWidth - 0.5) * 1.5;
+                mouseY = (e.clientY / window.innerHeight - 0.5) * 1.5;
+            });
+
+            // Loop de Animação Fluida 3D
+            const clock = new THREE.Clock();
+            function animate() {
+                requestAnimationFrame(animate);
+                const elapsedTime = clock.getElapsedTime();
+
+                meshes.forEach(mesh => {
+                    mesh.rotation.x += mesh.userData.rotSpeedX;
+                    mesh.rotation.y += mesh.userData.rotSpeedY;
+                    mesh.position.y = mesh.userData.initialY + Math.sin(elapsedTime * 1.5 + mesh.userData.floatOffset) * 0.7;
+                });
+
+                camera.position.x += (mouseX - camera.position.x) * 0.04;
+                camera.position.y += (-mouseY - camera.position.y) * 0.04;
+                camera.lookAt(scene.position);
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCards();
+            init3DBackground();
+        });
+    </script>
+</body>
+</html>
